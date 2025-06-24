@@ -1,2 +1,6 @@
+# File: netlify.toml
+
 [functions]
   directory = "netlify/functions"
+  # Set a global timeout for all functions to 30 seconds
+  timeout = 30
