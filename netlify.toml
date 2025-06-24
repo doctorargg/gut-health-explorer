@@ -1,14 +1,5 @@
-# Corrected File: netlify.toml
-
-[build]
-  # This tells Netlify where your built site is. For your project, it's the root.
-  publish = "."
-
 [functions]
-  # This tells Netlify where to find the source code for your functions.
   directory = "netlify/functions"
 
-# This is the correct way to set a timeout for all functions.
-# It uses a wildcard (*) to apply the setting to every function.
 [functions."*"]
   timeout = 30
