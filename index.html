@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>An Interactive Guide to Gut Health | A Functional Medicine Approach</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; scroll-behavior: smooth; }
+        .bg-warm-neutral { background-color: #FDFBF8; }
+        .text-primary { color: #3A4D39; }
+        .text-secondary { color: #739072; }
+        .bg-accent { background-color: #ECE3CE; }
+        .border-accent { border-color: #ECE3CE; }
+        .btn-primary { background-color: #4F6F52; color: white; }
+        .btn-primary:hover { background-color: #3A4D39; }
+        .btn-secondary { background-color: #ECE3CE; color: #3A4D39; }
+        .btn-secondary:hover { background-color: #e0d5bA; }
+        .nav-link.active { color: #3A4D39; border-bottom-color: #3A4D39; font-weight: 600; }
+        .five-r-icon { transition: all 0.3s ease-in-out; }
+        .five-r-icon.active { transform: scale(1.1); box-shadow: 0 0 0 4px #739072; }
+        .evidence-bar { background-color: #e0e0e0; border-radius: 4px; overflow: hidden; height: 10px; width: 100px; }
+        .evidence-level { height: 100%; transition: width 0.5s ease-in-out; }
+        .level-4 { background-color: #4caf50; }
+        .level-3 { background-color: #8bc34a; }
+        .level-2 { background-color: #ffc107; }
+        .level-1 { background-color: #ff9800; }
+        .level-0 { background-color: #f44336; }
+        .chart-container { position: relative; width: 100%; max-width: 800px; margin-left: auto; margin-right: auto; height: 400px; max-height: 50vh; }
+        @media (min-width: 768px) { .chart-container { height: 500px; } }
+        #evidenceChart { cursor: pointer; }
+        .content-card { transition: max-height 0.7s ease-in-out, padding 0.7s ease-in-out; overflow: hidden; max-height: 0; }
+        .content-card.open { max-height: 1500px; padding-top: 1rem; padding-bottom: 1rem; }
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease; }
+        .modal-overlay.visible { opacity: 1; visibility: visible; }
+        .modal-content { background-color: white; padding: 2rem; border-radius: 0.75rem; max-width: 90%; width: 600px; max-height: 90vh; display: flex; flex-direction: column; transform: scale(0.95); transition: transform 0.3s ease; }
+        .modal-overlay.visible .modal-content { transform: scale(1); }
+        .modal-body { flex-grow: 1; overflow-y: auto; padding-right: 1rem; margin-right: -1rem; }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #4F6F52; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 2rem auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-warm-neutral text-gray-800 antialiased">
+    <header class="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex-shrink-0">
+                    <h1 class="text-xl font-bold text-primary">Gut Health Explorer</h1>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#fundamentals" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-primary transition-colors duration-300">Fundamentals</a>
+                        <a href="#five-r-framework" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-primary transition-colors duration-300">The 5R Framework</a>
+                        <a href="#diets" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-primary transition-colors duration-300">Dietary Protocols</a>
+                        <a href="#supplements" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-primary transition-colors duration-300">Supplement Advisor</a>
+                        <a href="#evidence-chart" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-primary transition-colors duration-300">Evidence Hub</a>
+                        <a href="#avoid" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-primary transition-colors duration-300">Practices to Avoid</a>
+                    </div>
+                </div>
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white">
+                        <span class="sr-only">Open main menu</span>
+                        <svg class="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+                        <svg class="hidden h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                </div>
+            </div>
+        </nav>
+        <div class="md:hidden hidden" id="mobile-menu">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="#fundamentals" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-primary">Fundamentals</a>
+                <a href="#five-r-framework" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-primary">The 5R Framework</a>
+                <a href="#diets" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-primary">Dietary Protocols</a>
+                <a href="#supplements" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-primary">Supplement Advisor</a>
+                <a href="#evidence-chart" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-primary">Evidence Hub</a>
+                <a href="#avoid" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-primary">Practices to Avoid</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        <section class="text-center mb-16">
+            <h2 class="text-4xl md:text-5xl font-bold text-primary mb-4">Your Guide to a Healthier Gut</h2>
+            <p class="max-w-3xl mx-auto text-lg text-gray-600">Explore the functional medicine approach to resolving gut issues, backed by science. This interactive guide translates complex research into actionable insights for understanding and improving your systemic wellness, now with AI-powered tools.</p>
+        </section>
+
+        <section id="fundamentals" class="mb-20 scroll-mt-20">
+            <h3 class="text-3xl font-bold text-center text-primary mb-2">The "Why": Gut Health Fundamentals</h3>
+            <p class="text-center text-gray-600 mb-12 max-w-2xl mx-auto">Your gut is more than a digestive system; it's a complex ecosystem that communicates with your entire body. Understanding these connections is the first step toward better health.</p>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200/50">
+                    <h4 class="font-bold text-xl mb-3 text-secondary">🧠 The Gut-Brain Axis</h4>
+                    <p class="text-gray-700">The gut and brain are in constant bidirectional communication via the vagus nerve and chemical messengers. This "second brain" in your gut produces a significant portion of neurotransmitters like serotonin, meaning gut inflammation and dysbiosis can directly impact mood, contributing to anxiety and depression.</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200/50">
+                    <h4 class="font-bold text-xl mb-3 text-secondary">🛡️ The Gut-Immune Axis</h4>
+                    <p class="text-gray-700">Around 70-80% of your immune system resides in your gut. A healthy microbiome "educates" immune cells, promoting tolerance. When this system is disrupted, it can lead to chronic inflammation and is considered a key factor in the development of autoimmune conditions.</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200/50">
+                    <h4 class="font-bold text-xl mb-3 text-secondary">🧱 Intestinal Permeability ("Leaky Gut")</h4>
+                    <p class="text-gray-700">The gut lining is a tight barrier. When damaged by stress, diet, or toxins, it can become "leaky," allowing particles into the bloodstream. This triggers a systemic immune response, driving inflammation that underlies many chronic diseases.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="five-r-framework" class="mb-20 scroll-mt-20">
+            <h3 class="text-3xl font-bold text-center text-primary mb-2">The "How": The 5R Framework Explorer</h3>
+            <p class="text-center text-gray-600 mb-12 max-w-2xl mx-auto">Functional medicine uses the 5R Framework as a clinical roadmap to restore gut health systematically. Click each step to explore the goals, interventions, and scientific evidence.</p>
+            <div id="five-r-nav" class="flex flex-wrap justify-center gap-4 mb-8"></div>
+            <div id="five-r-content" class="bg-white p-6 md:p-8 rounded-xl shadow-lg border border-gray-200/50"></div>
+        </section>
+        
+        <section id="diets" class="mb-20 scroll-mt-20">
+            <h3 class="text-3xl font-bold text-center text-primary mb-2">Evidence-Based Dietary Protocols</h3>
+            <p class="text-center text-gray-600 mb-12 max-w-2xl mx-auto">Diet is the most powerful tool for shaping your microbiome. Here's a look at key dietary strategies, their mechanisms, and the evidence supporting their use. Click the sparkle button for AI-generated meal ideas!</p>
+            <div id="diet-cards-container" class="grid md:grid-cols-1 lg:grid-cols-3 gap-8"></div>
+        </section>
+
+        <section id="supplements" class="mb-20 scroll-mt-20">
+            <h3 class="text-3xl font-bold text-center text-primary mb-2">AI Supplement Advisor</h3>
+            <p class="text-center text-gray-600 mb-12 max-w-2xl mx-auto">Answer a few questions about your goals and the AI will generate a personalized, evidence-based supplement plan based on the information in this guide. <strong class="text-red-600">This is not medical advice.</strong></p>
+            <div class="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-lg border border-gray-200/50">
+                <form id="supplement-form">
+                    <div class="mb-6">
+                        <label for="primary-goal" class="block text-lg font-semibold text-primary mb-2">What is your primary goal?</label>
+                        <select id="primary-goal" class="w-full p-3 border border-gray-300 rounded-md focus:ring-secondary focus:border-secondary">
+                            <option>Reduce Bloating & Gas</option>
+                            <option>Improve Bowel Regularity (Constipation)</option>
+                            <option>Improve Bowel Regularity (Diarrhea)</option>
+                            <option>Enhance Mood & Reduce Anxiety</option>
+                            <option>Support Immune Function / Autoimmunity</option>
+                            <option>General Gut Barrier Repair</option>
+                        </select>
+                    </div>
+                    <div class="mb-8">
+                        <span class="block text-lg font-semibold text-primary mb-3">What are your key symptoms? (Check all that apply)</span>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                            <label class="flex items-center space-x-3"><input type="checkbox" name="symptom" value="Bloating/Gas" class="h-5 w-5 rounded border-gray-300 text-secondary focus:ring-secondary"> <span class="text-gray-700">Bloating / Gas</span></label>
+                            <label class="flex items-center space-x-3"><input type="checkbox" name="symptom" value="Constipation" class="h-5 w-5 rounded border-gray-300 text-secondary focus:ring-secondary"> <span class="text-gray-700">Constipation</span></label>
+                            <label class="flex items-center space-x-3"><input type="checkbox" name="symptom" value="Diarrhea" class="h-5 w-5 rounded border-gray-300 text-secondary focus:ring-secondary"> <span class="text-gray-700">Diarrhea</span></label>
+                            <label class="flex items-center space-x-3"><input type="checkbox" name="symptom" value="Brain Fog" class="h-5 w-5 rounded border-gray-300 text-secondary focus:ring-secondary"> <span class="text-gray-700">Brain Fog</span></label>
+                            <label class="flex items-center space-x-3"><input type="checkbox" name="symptom" value="Stress/Anxiety" class="h-5 w-5 rounded border-gray-300 text-secondary focus:ring-secondary"> <span class="text-gray-700">Stress / Anxiety</span></label>
+                            <label class="flex items-center space-x-3"><input type="checkbox" name="symptom" value="Suspected food sensitivities" class="h-5 w-5 rounded border-gray-300 text-secondary focus:ring-secondary"> <span class="text-gray-700">Food Sensitivities</span></label>
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <button type="submit" class="btn-primary font-semibold py-3 px-8 rounded-lg transition-transform hover:scale-105">
+                            ✨ Generate My Supplement Plan
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <section id="evidence-chart" class="mb-20 scroll-mt-20">
+            <h3 class="text-3xl font-bold text-center text-primary mb-2">Interactive Evidence Hub</h3>
+            <p class="text-center text-gray-600 mb-12 max-w-2xl mx-auto">Curious about what the science says? Use the filters below to compare interventions, then <strong class="text-secondary">click a bar</strong> to see a detailed summary of the supporting evidence.</p>
+            <div class="text-center mb-6">
+                <span class="font-semibold mr-4">Filter by 5R Phase:</span>
+                <div id="chart-filters" class="inline-flex rounded-md shadow-sm" role="group"></div>
+            </div>
+            <div class="bg-white p-4 sm:p-6 rounded-xl shadow-lg border border-gray-200/50">
+                <div class="chart-container">
+                    <canvas id="evidenceChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <section id="avoid" class="scroll-mt-20">
+            <h3 class="text-3xl font-bold text-center text-primary mb-2">Practices to Approach with Caution</h3>
+            <p class="text-center text-gray-600 mb-12 max-w-2xl mx-auto">Not all popular "gut health" trends are backed by science. An evidence-based approach means knowing what to avoid. Here are common practices that are unproven, disproven, or potentially harmful.</p>
+            <div class="space-y-6">
+                <div class="bg-red-50 border-l-4 border-red-500 p-6 rounded-r-lg">
+                    <h4 class="font-bold text-xl text-red-800 mb-2">❌ IgG Food Sensitivity Testing</h4>
+                    <p class="text-red-700">**Conclusion: Disproven & Not Recommended.** Major immunology societies worldwide condemn these tests. The presence of IgG antibodies reflects normal exposure to food, not pathology. In fact, it's often a sign of immune tolerance. Relying on these tests can lead to unnecessary, restrictive diets and nutritional deficiencies.</p>
+                </div>
+                <div class="bg-red-50 border-l-4 border-red-500 p-6 rounded-r-lg">
+                    <h4 class="font-bold text-xl text-red-800 mb-2">❌ Colon Cleansing & "Detoxes"</h4>
+                    <p class="text-red-700">**Conclusion: Disproven & Potentially Harmful.** Based on the disproven theory of "autointoxication," there is no scientific evidence that colon cleanses provide any benefit. They carry risks of dehydration, electrolyte imbalance, infection, and even bowel perforation, while washing out beneficial gut bacteria.</p>
+                </div>
+                 <div class="bg-orange-50 border-l-4 border-orange-500 p-6 rounded-r-lg">
+                    <h4 class="font-bold text-xl text-orange-800 mb-2">⚠️ Vague "Candida Cleanse" Diets</h4>
+                    <p class="text-orange-700">**Conclusion: Lacking Evidence & Misleading.** While specific fungal overgrowths (like SIFO) are real medical issues requiring targeted treatment, the concept of a widespread, systemic "yeast syndrome" is not supported by science. The benefits people feel on these diets are likely due to eliminating processed foods and sugar, not curing a scientifically unsupported condition.</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-accent mt-16 py-8">
+        <div class="container mx-auto px-4 text-center text-primary">
+            <p>This interactive guide is for informational purposes only and does not constitute medical advice. Consult with a qualified healthcare professional before making any health decisions.</p>
+            <p class="text-sm mt-2">Content synthesized from peer-reviewed scientific literature and clinical reports on functional medicine and gut health.</p>
+        </div>
+    </footer>
+    
+    <div id="ai-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="modal-title" class="text-2xl font-bold text-primary">AI Generator</h3>
+                <button id="modal-close-btn" class="text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
+            </div>
+            <div id="modal-body" class="modal-body"></div>
+            <div id="modal-footer" class="mt-6 text-right">
+                <button id="export-pdf-btn" class="btn-secondary py-2 px-4 rounded-md text-sm font-semibold hidden">Export to PDF</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const { jsPDF } = window.jspdf;
+            const data = {
+                fiveR: [
+                    {
+                        id: 'remove',
+                        name: 'Remove',
+                        icon: '🔥',
+                        title: 'Remove: Eliminating Pathogens & Irritants',
+                        description: "The foundational step is to remove stressors that negatively impact the gut environment. This includes eliminating inflammatory foods, infections, and environmental toxins that damage the gut lining and disrupt microbial balance.",
+                        interventions: [
+                            { name: 'Low-FODMAP Diet (for IBS)', category: 'Diet', evidence: 4, summary: 'Highly effective for reducing symptoms in a majority of IBS patients. Involves a temporary restriction followed by systematic reintroduction to identify triggers.', evidenceDetail: 'The efficacy of the low-FODMAP diet is supported by multiple systematic reviews and meta-analyses of randomized controlled trials (RCTs), which consistently show it improves global symptoms, abdominal pain, and bloating in a majority of IBS patients. A network meta-analysis ranked it as the most effective dietary intervention for IBS across all major endpoints.' },
+                            { name: 'Gluten-Free Diet (for Celiac)', category: 'Diet', evidence: 4, summary: 'The only effective medical treatment for Celiac Disease, a condition where gluten triggers an autoimmune reaction.', evidenceDetail: 'For individuals with a confirmed Celiac Disease diagnosis, a strict, lifelong gluten-free diet is the only effective medical treatment. This is not a recommendation but a medical necessity, supported by an overwhelming body of clinical evidence.' },
+                            { name: 'Elimination Diets (General)', category: 'Diet', evidence: 3, summary: 'The gold standard for identifying individual food sensitivities by removing common triggers (gluten, dairy, soy) and then reintroducing them systematically.', evidenceDetail: 'The elimination diet followed by a systematic reintroduction of foods is considered the clinical gold standard for identifying non-IgE-mediated food sensitivities. Its strength lies in its diagnostic power to create a personalized, sustainable diet.' },
+                            { name: 'Antibiotics for SIBO (Rifaximin)', category: 'Supplement', evidence: 4, summary: 'The conventional, evidence-based standard of care for eradicating Small Intestinal Bacterial Overgrowth.', evidenceDetail: 'Rifaximin is the most-studied and FDA-approved antibiotic for Small Intestinal Bacterial Overgrowth (SIBO). Its efficacy is well-established in multiple clinical trials, making it the conventional, evidence-based standard of care, particularly for hydrogen-dominant SIBO.' },
+                            { name: 'Herbal Antimicrobials', category: 'Supplement', evidence: 2, summary: 'Used for SIBO, SIFO, and other pathogens. Agents like oregano oil and berberine show promise, but evidence is less robust than for prescription medications.', evidenceDetail: 'Products containing herbal agents like berberine, oregano oil, and allicin have shown promise for treating SIBO in some studies, with one trial suggesting comparable efficacy to Rifaximin. However, the overall body of evidence is less robust and lacks the large-scale, high-quality RCTs that support prescription antibiotics.' },
+                            { name: 'Antifungals for SIFO', category: 'Supplement', evidence: 3, summary: 'Prescription (e.g., Fluconazole) or herbal antifungals are used to treat diagnosed Small Intestinal Fungal Overgrowth.', evidenceDetail: 'For diagnosed Small Intestinal Fungal Overgrowth (SIFO), typically confirmed via invasive small bowel aspirate, prescription antifungals like fluconazole are the standard treatment. The evidence is moderate due to the difficulty in diagnosis, but the treatment is targeted and effective for confirmed cases.' },
+                        ]
+                    },
+                    {
+                        id: 'replace',
+                        name: 'Replace',
+                        icon: '💧',
+                        title: 'Replace: Restoring Digestive Capacity',
+                        description: "This step focuses on restoring essential ingredients for proper digestion and absorption that may have been depleted. This includes stomach acid, bile, and digestive enzymes.",
+                        interventions: [
+                            { name: 'Betaine HCl (for Low Stomach Acid)', category: 'Supplement', evidence: 2, summary: 'Can temporarily lower stomach pH to aid meal digestion. Lacks large clinical trials for specific conditions but is physiologically plausible.', evidenceDetail: 'Small clinical trials confirm that Betaine HCl can temporarily lower stomach pH, supporting its physiological plausibility for aiding meal digestion. However, there is a significant lack of large-scale clinical trials to validate its use for treating specific conditions like GERD or functional dyspepsia. The evidence is therefore considered emerging.' },
+                            { name: 'Digestive Enzymes', category: 'Supplement', evidence: 2, summary: 'OTC enzymes may help with functional dyspepsia and bloating, but evidence is emerging and weaker than for prescription PERT for diagnosed pancreatic insufficiency.', evidenceDetail: 'While prescription enzymes (PERT) are standard for diagnosed pancreatic insufficiency, the evidence for over-the-counter enzymes for general complaints is emerging. A few smaller RCTs have shown benefits for symptoms like functional dyspepsia and post-meal bloating, but the evidence is not yet strong or consistent.' },
+                            { name: 'Bile Acid Support (Ox Bile)', category: 'Supplement', evidence: 1, summary: 'Used for suspected poor bile flow (e.g., post-gallbladder removal). Based on physiological principles, with a lack of high-quality clinical trials.', evidenceDetail: 'The use of ox bile supplements is based on well-understood physiological principles of fat digestion. However, there is a notable lack of high-quality human clinical trials to support its efficacy for general digestive complaints. The evidence is therefore considered lacking.' },
+                        ]
+                    },
+                    {
+                        id: 'reinoculate',
+                        name: 'Reinoculate',
+                        icon: '🌿',
+                        title: 'Reinoculate: Reshaping the Microbiome',
+                        description: "After clearing the 'bad stuff,' this phase focuses on reintroducing beneficial bacteria to restore a healthy, diverse, and resilient gut microbial community.",
+                        interventions: [
+                            { name: 'Fermented Foods', category: 'Diet', evidence: 4, summary: 'A diet high in foods like kefir and kimchi has been shown in clinical trials to significantly increase microbiome diversity and lower inflammatory markers.', evidenceDetail: 'The evidence for fermented foods is strong. A landmark 2021 Stanford University clinical trial found that a 10-week diet high in fermented foods (like yogurt, kefir, kimchi) significantly increased microbiome diversity and decreased 19 different systemic inflammatory markers.' },
+                            { name: 'Prebiotic Fibers', category: 'Diet', evidence: 4, summary: 'A diet rich in diverse plant fibers (from fruits, vegetables, legumes) is fundamental for nourishing beneficial gut bacteria and producing anti-inflammatory short-chain fatty acids (SCFAs).', evidenceDetail: 'The importance of prebiotic fibers is supported by a vast body of literature. These fibers are the primary fuel source for beneficial gut bacteria, leading to the production of anti-inflammatory short-chain fatty acids (SCFAs). This mechanism is a cornerstone of gut health, making a fiber-rich diet a strongly evidenced strategy.' },
+                            { name: 'Probiotics (for IBS)', category: 'Supplement', evidence: 4, summary: 'Multiple meta-analyses show specific probiotic strains are effective for improving global IBS symptoms, pain, and bloating.', evidenceDetail: 'The use of probiotics for IBS is one of the most well-researched areas in the field. Multiple systematic reviews and meta-analyses of RCTs have consistently concluded that specific strains and combinations are effective for improving global symptoms, making this a strongly evidenced intervention.' },
+                            { name: 'Probiotics (for Mental Health)', category: 'Supplement', evidence: 3, summary: 'A growing body of evidence, including meta-analyses, shows probiotics can significantly reduce symptoms of depression and anxiety.', evidenceDetail: 'Several recent meta-analyses have confirmed that probiotic supplementation can lead to significant reductions in the symptoms of clinical depression and anxiety. While the field is still developing, the consistency of these high-level reviews supports a moderate evidence rating.' },
+                            { name: 'Probiotics (for Autoimmunity)', category: 'Supplement', evidence: 2, summary: 'Emerging evidence suggests probiotics can reduce inflammatory markers in autoimmune conditions, but research is still preliminary.', evidenceDetail: 'The evidence here is promising but still emerging. A 2021 meta-analysis found probiotics significantly reduced key inflammatory markers (like hs-CRP and TNF-α) in patients with autoimmune diseases. However, more research is needed to determine the effects on clinical outcomes and identify specific therapeutic strains.' },
+                        ]
+                    },
+                    {
+                        id: 'repair',
+                        name: 'Repair',
+                        icon: '🛠️',
+                        title: 'Repair: Healing the Intestinal Lining',
+                        description: "This phase provides key nutrients that serve as building blocks to help regenerate the gut mucosal lining, tighten cellular junctions, and reduce intestinal permeability.",
+                        interventions: [
+                            { name: 'Zinc Carnosine', category: 'Supplement', evidence: 3, summary: 'Well-supported by clinical trials for healing gastric/small intestinal injury (e.g., from NSAIDs) and supporting mucosal integrity.', evidenceDetail: 'Zinc carnosine is an approved pharmaceutical in Japan for gastric ulcers. Human clinical trials have demonstrated its ability to protect the small intestine from NSAID-induced injury and prevent increases in gut permeability, giving it a moderate and targeted evidence base.' },
+                            { name: 'L-Glutamine', category: 'Supplement', evidence: 2, summary: 'Evidence is mixed. Appears most effective in high doses for short durations in cases of acute physiological stress (e.g., surgery, critical illness), but its benefit for general "leaky gut" is unproven.', evidenceDetail: 'The evidence for L-Glutamine is mixed and highly context-dependent. Meta-analyses show it is effective at reducing intestinal permeability in situations of acute physiological stress like surgery or critical illness. However, for general gut health or low-grade "leaky gut," the evidence is considered lacking, making its overall rating emerging.' },
+                            { name: 'Collagen Peptides', category: 'Supplement', evidence: 1, summary: 'Popular but claims are largely theoretical. No direct evidence that supplemental collagen preferentially heals the gut lining compared to other protein sources.', evidenceDetail: 'Claims that collagen specifically heals the gut lining are theoretical. When digested, collagen is broken down into its constituent amino acids that enter the body\'s general pool. There are no high-quality human trials to show it is superior to other protein sources for gut repair. The evidence is lacking.' },
+                            { name: 'Omega-3 Fatty Acids', category: 'Supplement', evidence: 3, summary: 'Potent anti-inflammatory effects. Widely shown to support overall health and can help modulate the inflammatory responses associated with a leaky gut.', evidenceDetail: 'The potent systemic anti-inflammatory effects of Omega-3s (EPA/DHA) are supported by a vast body of evidence. While not a direct "gut repair" nutrient, its ability to modulate the inflammatory processes associated with intestinal permeability gives it a moderate level of evidence in the context of gut health protocols.' },
+                        ]
+                    },
+                    {
+                        id: 'rebalance',
+                        name: 'Rebalance',
+                        icon: '🧘',
+                        title: 'Rebalance: Addressing Lifestyle Factors',
+                        description: "The final, ongoing step addresses the systemic and lifestyle factors that profoundly impact gut health, ensuring long-term success and resilience.",
+                        interventions: [
+                            { name: 'Stress Management', category: 'Lifestyle', evidence: 4, summary: 'Essential. Chronic stress directly damages the gut via the HPA axis. Practices like mindfulness and yoga are core therapeutic interventions.', evidenceDetail: 'The link between chronic stress, HPA-axis dysfunction, and gut barrier damage is strongly established in the scientific literature. Systematic reviews have confirmed that psychological stress significantly and negatively alters the gut microbiome. Therefore, stress management is a core, evidence-based intervention.' },
+                            { name: 'Regular Exercise', category: 'Lifestyle', evidence: 4, summary: 'Strongly associated with increased microbial diversity and the abundance of beneficial, anti-inflammatory bacteria, independent of diet.', evidenceDetail: 'Multiple systematic reviews and meta-analyses have demonstrated that regular, moderate exercise increases microbial diversity and boosts the abundance of beneficial, anti-inflammatory bacteria like Faecalibacterium. This effect appears to be independent of diet, making it a strongly evidenced strategy.' },
+                            { name: 'Sleep Hygiene', category: 'Lifestyle', evidence: 3, summary: 'Poor sleep disrupts the microbiome\'s circadian rhythm and promotes inflammation. Foundational sleep hygiene is a primary strategy.', evidenceDetail: 'The bidirectional link between sleep and the gut is well-documented. Poor sleep and circadian disruption are known to induce dysbiosis and a pro-inflammatory state. While using gut therapies to fix sleep has mixed evidence, prioritizing sleep hygiene to support both systemic and gut health is a moderately-strong, evidence-based recommendation.' },
+                        ]
+                    }
+                ],
+                diets: [
+                    {
+                        name: "Low-FODMAP Diet",
+                        evidence: 4,
+                        description: "A three-phase diagnostic diet to identify triggers for Irritable Bowel Syndrome (IBS). It temporarily restricts fermentable carbohydrates (FODMAPs) that cause gas, bloating, and pain, followed by systematic reintroduction.",
+                        takeaway: "Gold-standard, evidence-based approach for managing IBS symptoms, but should be done with professional guidance and is not intended as a permanent diet."
+                    },
+                    {
+                        name: "Gluten-Free Diet (GFD)",
+                        evidence: 4,
+                        description: "Essential for Celiac Disease. Its role in Non-Celiac Gluten Sensitivity (NCGS) is complex, as symptoms may be from other wheat components (like fructans, a FODMAP). Emerging evidence suggests potential benefits for some autoimmune conditions like Rheumatoid Arthritis.",
+                        takeaway: "Medically necessary for celiac disease. Its broader use should be based on a careful diagnostic process, not assumption."
+                    },
+                    {
+                        name: "Mediterranean / Anti-Inflammatory Diet",
+                        evidence: 4,
+                        description: "A long-term dietary pattern rich in fruits, vegetables, whole grains, legumes, and healthy fats. It provides abundant fiber and polyphenols that nourish the microbiome, reduce inflammation, and support gut barrier integrity.",
+                        takeaway: "A foundational, evidence-based strategy for long-term gut health, disease prevention, and the 'Rebalance' phase of restoration."
+                    }
+                ]
+            };
+
+            const allSupplements = data.fiveR.flatMap(phase => phase.interventions.filter(i => i.category === 'Supplement')).map(s => ({...s}));
+
+            const fiveRNav = document.getElementById('five-r-nav');
+            const fiveRContent = document.getElementById('five-r-content');
+            const dietCardsContainer = document.getElementById('diet-cards-container');
+            const supplementForm = document.getElementById('supplement-form');
+            const evidenceLevelText = ['Disproven', 'Lacking/Mixed', 'Emerging', 'Moderate', 'Strong'];
+            const modal = document.getElementById('ai-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalBody = document.getElementById('modal-body');
+            const modalFooter = document.getElementById('modal-footer');
+            const modalCloseBtn = document.getElementById('modal-close-btn');
+            const exportPdfBtn = document.getElementById('export-pdf-btn');
+            
+            let currentContentForExport = { title: '', content: '' };
+            let currentFilteredChartData = [];
+
+            function openModal() { 
+                modal.classList.add('visible'); 
+            }
+            function closeModal() { modal.classList.remove('visible'); }
+
+            modalCloseBtn.addEventListener('click', closeModal);
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) closeModal();
+            });
+
+            async function generateMealPlan(dietName, planType) {
+                openModal();
+                modalTitle.textContent = `AI Ideas for ${dietName}`;
+                modalBody.innerHTML = '<div class="loader"></div>';
+                exportPdfBtn.classList.add('hidden');
+
+                const prompt = `Generate a simple ${planType === 'weekly' ? 'seven-day' : 'one-day'} sample meal plan (breakfast, lunch, dinner, one snack per day) for a person following a ${dietName}. The meal plan should be focused on supporting gut health by being anti-inflammatory and rich in fiber and whole foods. For the Low-FODMAP diet, ensure the suggestions are suitable for the elimination phase. For the weekly plan, structure it day by day (e.g., '## Day 1'). Format the output with clear headings for each meal and day using markdown (e.g., '## Day 1', '**Breakfast:**'). Do not include any introductory or concluding sentences, just the meal plan itself.`;
+                
+                try {
+                    const text = await callGeminiAPI(prompt);
+                    const formattedText = text
+                        .replace(/## (.*?)\n/g, '<h4 class="text-lg font-bold text-secondary mt-4 mb-2">$1</h4>')
+                        .replace(/\*\*(.*?):/g, '<strong class="text-primary">$1:</strong>')
+                        .replace(/\n/g, '<br>');
+
+                    modalBody.innerHTML = `<div class="text-gray-700 text-sm leading-relaxed">${formattedText}</div>`;
+                    currentContentForExport = { 
+                        title: `${dietName} - ${planType.charAt(0).toUpperCase() + planType.slice(1)} Meal Plan`, 
+                        content: text // Store raw text for PDF
+                    };
+                    exportPdfBtn.classList.remove('hidden');
+                } catch (error) {
+                    modalBody.innerHTML = `<p class="text-red-600">Sorry, we couldn't generate a plan at this time. Error: ${error.message}</p>`;
+                }
+            }
+            
+            supplementForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const primaryGoal = document.getElementById('primary-goal').value;
+                const symptoms = Array.from(document.querySelectorAll('input[name="symptom"]:checked')).map(el => el.value);
+
+                openModal();
+                modalTitle.textContent = `AI-Generated Supplement Plan`;
+                modalBody.innerHTML = '<div class="loader"></div>';
+                exportPdfBtn.classList.add('hidden');
+
+                const supplementListForPrompt = allSupplements.map(s => `- ${s.name} (Evidence Level: ${evidenceLevelText[s.evidence]})`).join('\n');
+
+                const prompt = `Act as a functional medicine expert. A user has the primary goal of "${primaryGoal}" and is experiencing the following symptoms: ${symptoms.join(', ') || 'none specified'}. 
+                
+                Based on this information, create a personalized supplement plan. You MUST ONLY choose from the following list of available supplements and their corresponding evidence levels:
+                ${supplementListForPrompt}
+
+                For each recommended supplement, provide:
+                1.  **Rationale:** A brief explanation of why it's a good choice for the user's specific goals and symptoms.
+                2.  **Evidence:** State the evidence level exactly as provided in the list.
+                3.  **Typical Dosage:** A common, safe starting dosage range.
+                4.  **Considerations:** A brief, important note (e.g., "Take with food," "Best taken at night," "Consult a doctor if on blood thinners").
+
+                Format the response clearly using markdown. Use a main heading for each supplement (e.g., '### Probiotics (for IBS)'). Do not include any introductory or concluding paragraphs or disclaimers. Just provide the supplement recommendations.`;
+                
+                try {
+                    const text = await callGeminiAPI(prompt);
+                    const formattedText = text
+                        .replace(/### (.*?)\n/g, '<h4 class="text-lg font-bold text-secondary mt-4 mb-2">$1</h4>')
+                        .replace(/\*\*(.*?):/g, '<strong class="text-primary">$1:</strong>')
+                        .replace(/\n/g, '<br>');
+
+                    modalBody.innerHTML = `<div class="text-gray-700 text-sm leading-relaxed">${formattedText}</div>`;
+                    currentContentForExport = {
+                        title: 'Personalized Supplement Plan',
+                        content: text // Store raw text for PDF
+                    };
+                    exportPdfBtn.classList.remove('hidden');
+                } catch (error) {
+                     modalBody.innerHTML = `<p class="text-red-600">Sorry, we couldn't generate a plan at this time. Error: ${error.message}</p>`;
+                }
+            });
+
+            async function callGeminiAPI(prompt) {
+                const response = await fetch('/.netlify/functions/get-ai-response', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt })
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Server error: ${response.statusText}. Response: ${errorText}`);
+                }
+                
+                const result = await response.json();
+
+                if (result.candidates && result.candidates[0].content && result.candidates[0].content.parts[0]) {
+                    return result.candidates[0].content.parts[0].text;
+                } else {
+                    console.error("Unexpected API response:", result);
+                    throw new Error('Unexpected API response structure from serverless function.');
+                }
+            }
+            
+            exportPdfBtn.addEventListener('click', () => {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF({
+                    orientation: 'p',
+                    unit: 'mm',
+                    format: 'a4'
+                });
+
+                const title = currentContentForExport.title;
+                const rawText = currentContentForExport.content;
+                const filename = `${title.replace(/[\s\/]/g, '_')}.pdf`;
+                
+                const margin = 15;
+                const contentWidth = doc.internal.pageSize.getWidth() - margin * 2;
+                let cursorY = margin + 10;
+
+                doc.setFontSize(18);
+                doc.setFont('helvetica', 'bold');
+                doc.text(title, margin, cursorY);
+                cursorY += 15;
+
+                const lines = rawText.split('\n');
+
+                lines.forEach(line => {
+                    if (cursorY > doc.internal.pageSize.getHeight() - margin) {
+                        doc.addPage();
+                        cursorY = margin;
+                    }
+
+                    if (line.trim() === '') {
+                        cursorY += 5;
+                        return;
+                    }
+                    
+                    if (line.startsWith('### ') || line.startsWith('## ')) {
+                        cursorY += 2; // Extra space before heading
+                        doc.setFontSize(14);
+                        doc.setFont('helvetica', 'bold');
+                        const headingText = line.replace(/^[#\s]+/, '');
+                        const splitText = doc.splitTextToSize(headingText, contentWidth);
+                        doc.text(splitText, margin, cursorY);
+                        cursorY += (splitText.length * 7); 
+                    } 
+                    else if (line.includes('**')) {
+                        doc.setFontSize(10);
+                        let currentX = margin;
+                        const parts = line.split('**');
+                        parts.forEach((part, index) => {
+                            const isBold = index % 2 === 1;
+                            doc.setFont('helvetica', isBold ? 'bold' : 'normal');
+                            
+                            const splitPart = doc.splitTextToSize(part, contentWidth - (currentX - margin));
+                            
+                            splitPart.forEach((linePart, lineIndex) => {
+                                let textWidth = doc.getStringUnitWidth(linePart) * doc.getFontSize() / doc.internal.scaleFactor;
+                                if (currentX + textWidth > doc.internal.pageSize.getWidth() - margin && currentX > margin) {
+                                    cursorY += 5;
+                                    if (cursorY > doc.internal.pageSize.getHeight() - margin) {
+                                        doc.addPage();
+                                        cursorY = margin;
+                                    }
+                                    currentX = margin;
+                                }
+                                doc.text(linePart, currentX, cursorY);
+                                currentX += textWidth;
+                            });
+                        });
+                        cursorY += 5;
+
+                    } 
+                    else {
+                        doc.setFontSize(10);
+                        doc.setFont('helvetica', 'normal');
+                        const splitText = doc.splitTextToSize(line, contentWidth);
+                        doc.text(splitText, margin, cursorY);
+                        cursorY += splitText.length * 5;
+                    }
+                });
+
+                doc.save(filename);
+            });
+
+
+            function createEvidenceBar(level) {
+                const percentage = (level / 4) * 100;
+                return `
+                    <div class="flex items-center gap-2">
+                        <div class="evidence-bar"><div class="evidence-level level-${level}" style="width: ${percentage}%"></div></div>
+                        <span class="text-xs font-medium text-gray-600">${evidenceLevelText[level]}</span>
+                    </div>
+                `;
+            }
+
+            function displayFiveRContent(phaseId) {
+                const phase = data.fiveR.find(p => p.id === phaseId);
+                if (!phase) return;
+                let interventionHtml = phase.interventions.map(i => `
+                    <div class="py-4 border-b border-gray-200 last:border-b-0">
+                        <h4 class="font-semibold text-lg text-primary">${i.name}</h4>
+                        <div class="my-2">${createEvidenceBar(i.evidence)}</div>
+                        <p class="text-gray-700 text-sm">${i.summary}</p>
+                    </div>
+                `).join('');
+                fiveRContent.innerHTML = `
+                    <h3 class="text-2xl font-bold mb-2 text-secondary">${phase.icon} ${phase.title}</h3>
+                    <p class="mb-6 text-gray-600">${phase.description}</p>
+                    <div class="space-y-4">${interventionHtml}</div>
+                `;
+                document.querySelectorAll('.five-r-icon').forEach(icon => {
+                    icon.classList.toggle('active', icon.dataset.phase === phaseId);
+                });
+            }
+            data.fiveR.forEach(phase => {
+                const button = document.createElement('button');
+                button.className = 'five-r-icon flex flex-col items-center justify-center p-3 w-24 h-24 bg-white rounded-full shadow-md hover:shadow-lg transition-all duration-300';
+                button.dataset.phase = phase.id;
+                button.innerHTML = `<span class="text-3xl">${phase.icon}</span><span class="text-sm font-semibold text-primary mt-1">${phase.name}</span>`;
+                button.onclick = () => displayFiveRContent(phase.id);
+                fiveRNav.appendChild(button);
+            });
+            displayFiveRContent('remove');
+            
+            data.diets.forEach(diet => {
+                const card = document.createElement('div');
+                card.className = "bg-white p-6 rounded-xl shadow-lg border border-gray-200/50 flex flex-col";
+                card.innerHTML = `
+                    <h4 class="font-bold text-xl mb-3 text-secondary">${diet.name}</h4>
+                    <div class="mb-3">${createEvidenceBar(diet.evidence)}</div>
+                    <p class="text-gray-700 flex-grow">${diet.description}</p>
+                    <div class="mt-4 flex flex-col sm:flex-row gap-2">
+                        <button class="flex-1 text-sm text-left font-semibold text-primary group toggle-details py-2 px-3 rounded-md bg-gray-100 hover:bg-gray-200 transition-colors">
+                            Key Takeaway
+                            <span class="inline-block transition-transform duration-300 group-[.open]:rotate-180">▼</span>
+                        </button>
+                        <button class="ai-meal-btn flex-1 text-sm btn-primary py-2 px-3 rounded-md transition-all duration-200 hover:shadow-lg" data-diet-name="${diet.name}">
+                            ✨ Generate Meal Ideas
+                        </button>
+                    </div>
+                    <div class="content-card">
+                        <p class="text-sm text-gray-600 bg-accent p-3 rounded-md mt-2">${diet.takeaway}</p>
+                    </div>
+                `;
+                dietCardsContainer.appendChild(card);
+            });
+            
+            dietCardsContainer.addEventListener('click', function(e) {
+                const toggleButton = e.target.closest('.toggle-details');
+                if (toggleButton) {
+                    toggleButton.classList.toggle('open');
+                    const contentCard = toggleButton.parentElement.nextElementSibling;
+                    contentCard.classList.toggle('open');
+                }
+                const aiButton = e.target.closest('.ai-meal-btn');
+                if (aiButton) {
+                    const dietName = aiButton.dataset.dietName;
+                    openModal();
+                    modalTitle.textContent = `AI Ideas for ${dietName}`;
+                    modalBody.innerHTML = `
+                        <p class="text-center text-gray-600 mb-6">Choose the type of meal plan you'd like the AI to generate.</p>
+                        <div class="flex justify-center gap-4">
+                            <button class="plan-type-btn btn-primary py-2 px-4 rounded-md" data-plan-type="daily">Daily Plan</button>
+                            <button class="plan-type-btn btn-primary py-2 px-4 rounded-md" data-plan-type="weekly">Weekly Plan</button>
+                        </div>
+                    `;
+                    exportPdfBtn.classList.add('hidden');
+                    
+                    const modalClickHandler = (event) => {
+                         if (event.target.classList.contains('plan-type-btn')) {
+                            const planType = event.target.dataset.planType;
+                            generateMealPlan(dietName, planType);
+                            modal.removeEventListener('click', modalClickHandler);
+                        }
+                    };
+                    modal.addEventListener('click', modalClickHandler);
+                }
+            });
+            
+            const allInterventions = data.fiveR.flatMap(phase => phase.interventions.map(i => ({ ...i, phase: phase.id })));
+            const ctx = document.getElementById('evidenceChart').getContext('2d');
+            let evidenceChart;
+
+            function showEvidenceDetail(intervention) {
+                openModal();
+                modalTitle.textContent = `Evidence for: ${intervention.name}`;
+                modalBody.innerHTML = `
+                    <div class="mb-4">${createEvidenceBar(intervention.evidence)}</div>
+                    <h4 class="font-bold text-lg text-primary mb-2">Evidence Summary</h4>
+                    <p class="text-gray-700 text-sm leading-relaxed">${intervention.evidenceDetail}</p>
+                `;
+                exportPdfBtn.classList.add('hidden');
+            }
+
+            function handleChartClick(evt) {
+                const points = evidenceChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
+                if (points.length) {
+                    const firstPoint = points[0];
+                    const intervention = currentFilteredChartData[firstPoint.index];
+                    if(intervention) {
+                        showEvidenceDetail(intervention);
+                    }
+                }
+            }
+            
+            function renderChart(filter = 'all') {
+                currentFilteredChartData = filter === 'all' ? allInterventions : allInterventions.filter(i => i.phase === filter);
+                const chartData = {
+                    labels: currentFilteredChartData.map(i => i.name),
+                    datasets: [{
+                        label: 'Level of Evidence',
+                        data: currentFilteredChartData.map(i => i.evidence),
+                        backgroundColor: currentFilteredChartData.map(i => {
+                            const colors = ['#f44336', '#ff9800', '#ffc107', '#8bc34a', '#4caf50'];
+                            return colors[i.evidence];
+                        }),
+                        borderColor: currentFilteredChartData.map(i => {
+                            const colors = ['#d32f2f', '#f57c00', '#fbc02d', '#689f38', '#388e3c'];
+                            return colors[i.evidence];
+                        }),
+                        borderWidth: 1
+                    }]
+                };
+                if (evidenceChart) {
+                    evidenceChart.destroy();
+                }
+                evidenceChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: chartData,
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        onClick: handleChartClick,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `Evidence: ${evidenceLevelText[context.raw]}`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                max: 4,
+                                ticks: {
+                                    stepSize: 1,
+                                    callback: function(value, index, values) {
+                                        return evidenceLevelText[value];
+                                    }
+                                }
+                            },
+                             y: {
+                                ticks: {
+                                    autoSkip: false,
+                                     font: {
+                                        size: 10
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            const chartFiltersContainer = document.getElementById('chart-filters');
+            const filters = [{ id: 'all', name: 'All' }, ...data.fiveR.map(p => ({ id: p.id, name: p.name }))];
+            filters.forEach((filter, index) => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.textContent = filter.name;
+                button.dataset.filter = filter.id;
+                button.className = `filter-btn px-4 py-2 text-sm font-medium transition-colors duration-200 ${index === 0 ? 'bg-primary text-white' : 'bg-white text-gray-900 hover:bg-gray-100'} ${index === 0 ? 'rounded-l-lg' : ''} ${index === filters.length - 1 ? 'rounded-r-lg' : ''} border border-gray-200`;
+                button.onclick = () => {
+                    renderChart(filter.id);
+                    document.querySelectorAll('.filter-btn').forEach(btn => {
+                        btn.classList.remove('bg-primary', 'text-white');
+                        btn.classList.add('bg-white', 'text-gray-900', 'hover:bg-gray-100');
+                    });
+                    button.classList.add('bg-primary', 'text-white');
+                    button.classList.remove('bg-white', 'text-gray-900', 'hover:bg-gray-100');
+                };
+                chartFiltersContainer.appendChild(button);
+            });
+            renderChart('all');
+            
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+                mobileMenuButton.querySelector('svg:first-child').classList.toggle('hidden');
+                mobileMenuButton.querySelector('svg:last-child').classList.toggle('hidden');
+            });
+
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('section');
+            window.addEventListener('scroll', () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (pageYOffset >= sectionTop - 80) {
+                        current = section.getAttribute('id');
+                    }
+                });
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href').includes(current)) {
+                        link.classList.add('active');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
+```
+
+---
+
+### File 2: `package.json`
+
+Create a file named `package.json` at the root of your project folder. This file is the "shopping list" that tells Netlify which tools your secure function needs.
+
+
+```json
+{
+  "name": "gut-health-secure-app",
+  "version": "1.0.0",
+  "description": "Secure serverless function for gut health app",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "node-fetch": "^2.7.0"
+  }
+}

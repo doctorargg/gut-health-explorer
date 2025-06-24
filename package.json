@@ -1,0 +1,9 @@
+{
+  "name": "gut-health-secure-app",
+  "version": "1.0.0",
+  "description": "Secure serverless function for gut health app",
+  "type": "module",
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  }
+}
