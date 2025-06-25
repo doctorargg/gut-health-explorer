@@ -1,5 +1,8 @@
-[functions]
-  directory = "netlify/functions"
+# Final configuration to explicitly declare the function
 
-[functions."*"]
-  timeout = 30
+[build]
+  publish = "."
+
+[[functions]]
+  name = "get-ai-response"
+  path = "functions/functions.js"
