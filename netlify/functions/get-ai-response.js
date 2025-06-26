@@ -1,5 +1,10 @@
 // File: netlify/functions/get-ai-response.js
-import fetch from 'node-fetch';
+import OpenAI from 'openai';
+
+// Initialize the OpenAI client with the API key from environment variables
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 export const handler = async (event) => {
   // Only allow POST requests
@@ -7,11 +12,8 @@ export const handler = async (event) => {
     return { statusCode: 405, body: JSON.stringify({ error: 'Method Not Allowed' }) };
   }
 
-  // Retrieve the API key from Netlify's environment variables.
-  // Ensure your variable in the Netlify UI is named exactly "GEMINI_API_KEY".
-  const apiKey = process.env.GEMINI_API_KEY;
-
-  if (!apiKey) {
+  // Check if the API key is configured
+  if (!process.env.OPENAI_API_KEY) {
     return { statusCode: 500, body: JSON.stringify({ error: 'API key is not configured on the server.' }) };
   }
 
@@ -21,37 +23,28 @@ export const handler = async (event) => {
       return { statusCode: 400, body: JSON.stringify({ error: 'Prompt is missing from request.' }) };
     }
 
-    // Use the correct and available Gemini model name.
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-    
-    const payload = {
-      contents: [{ parts: [{ text: prompt }] }]
-    };
-
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+    // Make the API call to OpenAI
+    const response = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo", // A powerful and cost-effective model
+      messages: [{ role: "user", content: prompt }],
     });
 
-    const responseData = await response.json();
-
-    if (!response.ok) {
-      console.error("Google API Error:", responseData);
-      const errorMessage = responseData.error?.message || response.statusText;
-      return { statusCode: response.status, body: JSON.stringify({ error: `API Error: ${errorMessage}` }) };
-    }
-
-    // Extract the text and send a simple, clean response to the frontend.
-    const text = responseData.candidates[0].content.parts[0].text;
+    // Extract the text from the response
+    const text = response.choices[0].message.content;
     
+    // Send the successful response back to the frontend
     return {
       statusCode: 200,
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text: text }),
     };
 
   } catch (error) {
-    console.error("Serverless Function Error:", error);
-    return { statusCode: 500, body: JSON.stringify({ error: error.message }) };
+    // Log the detailed error and send a generic message to the client
+    console.error("OpenAI API or Function Error:", error);
+    return { 
+      statusCode: error.status || 500, 
+      body: JSON.stringify({ error: `An error occurred with the AI service: ${error.message}` }) 
+    };
   }
 };
